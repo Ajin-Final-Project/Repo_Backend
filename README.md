@@ -29,4 +29,5 @@ AJIN-SMART-FACTORY/
 
 ```bash
 pip install -r requirements.txt
+(에러뜨면 python -X utf8 -m pip install -r requirements.txt 요고 실행!)
 ```
