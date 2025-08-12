@@ -1,0 +1,93 @@
+"""
+간단한 FastAPI 애플리케이션 - Company 테이블 조회 전용
+
+이 모듈은 FastAPI 애플리케이션의 메인 진입점입니다.
+Company 테이블 조회 기능만을 제공하는 간단한 REST API 서버를 구성합니다.
+
+주요 기능:
+- FastAPI 애플리케이션 초기화 및 설정
+- CORS 미들웨어 설정
+- API 라우터 등록
+- 기본 엔드포인트 제공 (루트, 헬스체크)
+- uvicorn 서버 실행
+"""
+
+# 필요한 라이브러리들을 가져옵니다
+from fastapi import FastAPI  # FastAPI 애플리케이션 생성용
+from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어
+from app.controllers import company_controller  # Company 컨트롤러 모듈
+from app.controllers import process_line_controller
+
+# ============================================================================
+# FastAPI 애플리케이션 생성 및 설정
+# ============================================================================
+# FastAPI 인스턴스를 생성합니다
+# title: API 문서에 표시될 제목
+# version: API 버전 정보
+# description: API에 대한 상세 설명
+app = FastAPI(
+    title="AJIN Company 조회 API",
+    version="1.0.0",
+    description="MariaDB에서 조회하는 API"
+)
+
+# ============================================================================
+# CORS 미들웨어 설정
+# ============================================================================
+# Cross-Origin Resource Sharing (CORS) 미들웨어를 추가합니다
+# 이는 웹 브라우저에서 다른 도메인의 API를 호출할 수 있게 해줍니다
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # 모든 도메인에서의 요청 허용 (개발용)
+    allow_credentials=True,     # 쿠키, 인증 헤더 등 허용
+    allow_methods=["*"],      # 모든 메서드만 허용 (조회 전용 API)
+    allow_headers=["*"],        # 모든 헤더 허용
+)
+
+# ============================================================================
+# API 라우터 등록
+# ============================================================================
+app.include_router(company_controller.router, prefix="/smartFactory")
+app.include_router(process_line_controller.router, prefix="/smartFactory")
+# ============================================================================
+# 기본 엔드포인트 정의
+# ============================================================================
+@app.get("/")  # 루트 경로 (/) 엔드포인트
+async def root():
+    """
+    루트 엔드포인트 - API 기본 정보 제공
+    
+    이 엔드포인트는 API의 기본 정보와 사용법을 제공합니다.
+    사용자가 루트 경로에 접근했을 때 API에 대한 개요를 확인할 수 있습니다.
+    
+    Returns:
+        dict: API 기본 정보를 담은 딕셔너리
+            - message: API 이름
+            - description: API 설명
+            - docs: API 문서 링크
+            - company_endpoint: Company 조회 엔드포인트 경로
+    """
+    return {
+        "message": "AJIN Company 조회 API",                    # API 이름
+        "description": "아진산업 스마트팩토리 백엔드 API 호출부 입니다",  # API 설명
+        "docs": "/docs",                                       # Swagger UI 문서 링크
+        "company_endpoint": "/smartFactory/"             # Company 조회 엔드포인트
+    }
+
+
+# ============================================================================
+# 애플리케이션 실행 (메인 모듈로 실행될 때만)
+# ============================================================================
+# 이 파일이 직접 실행될 때만 uvicorn 서버를 시작합니다
+# 다른 모듈에서 import될 때는 실행되지 않습니다
+if __name__ == "__main__":
+    # uvicorn 라이브러리를 import합니다 (비동기 ASGI 서버)
+    import uvicorn
+    
+    # uvicorn.run()을 사용하여 FastAPI 애플리케이션을 실행합니다
+    uvicorn.run(
+        "main:app",        # 실행할 애플리케이션 (main.py의 app 변수)
+        host="0.0.0.0",    # 모든 네트워크 인터페이스에서 접근 허용
+        port=8000,         # 서버 포트 번호
+        reload=True         # 코드 변경 시 자동 재시작 (개발용)
+    ) 

@@ -1,0 +1,11 @@
+# FastAPI 웹 프레임워크 - 현대적이고 빠른 Python 웹 API 구축용
+fastapi
+
+# ASGI 서버 - FastAPI 애플리케이션을 실행하는 고성능 서버
+uvicorn
+
+# SQL 툴킷 및 ORM - Python에서 데이터베이스 작업을 위한 라이브러리
+sqlalchemy
+
+# MySQL/MariaDB 데이터베이스 연결 드라이버 - Python용 MySQL 클라이언트
+pymysql 
