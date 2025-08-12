@@ -11,13 +11,13 @@ AJIN-SMART-FACTORY/
 │   │   └── database.py      # 데이터베이스 설정
 │   │
 │   ├── models/
-│   │    └── model.py        # 장비 모델
+│   │    └── model.py        # 모델
 │   │
     ├── services/
-│   │    └── service.py        # 서비스 모델
+│   │    └── service.py        # 서비스
 │   │
 │   └── controllers/
-│       └── equipment_controller.py  # 장비 조회 API
+│       └── controller.py  #
 ├── main.py                     # FastAPI 애플리케이션 진입점
 ├── requirements.txt            # Python 의존성
 └── README.md
