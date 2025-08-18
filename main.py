@@ -12,11 +12,28 @@ Company 테이블 조회 기능만을 제공하는 간단한 REST API 서버를 
 - uvicorn 서버 실행
 """
 
+
+"""
+간단한 FastAPI 애플리케이션
+- Company/ProcessLine 조회 + Auth
+"""
+
+# ── ✅ Repo_Backend 경로를 모듈 검색 경로에 포함
+import os, sys
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.join(BASE_DIR, "Repo_Backend")
+if os.path.isdir(os.path.join(BACKEND_DIR, "app")) and BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
+
 # 필요한 라이브러리들을 가져옵니다
 from fastapi import FastAPI  # FastAPI 애플리케이션 생성용
 from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어
-from app.controllers import company_controller  # Company 컨트롤러 모듈
-from app.controllers import process_line_controller
+
+# 컨트롤러(라우터)
+from app.controllers.auth_controller import router as auth_router # Company 컨트롤러 모듈
+from app.controllers.company_controller import router as company_router
+from app.controllers.process_line_controller import router as process_router # ✅ 추가: 인증 라우터
 
 # ============================================================================
 # FastAPI 애플리케이션 생성 및 설정
@@ -26,9 +43,13 @@ from app.controllers import process_line_controller
 # version: API 버전 정보
 # description: API에 대한 상세 설명
 app = FastAPI(
-    title="AJIN Company 조회 API",
-    version="1.0.0",
-    description="MariaDB에서 조회하는 API"
+    # title="AJIN Company 조회 API",
+    # version="1.0.0",
+    # description="MariaDB에서 조회하는 API"
+
+    title="AJIN Backend API",
+    version="1.1.0",
+    description="AJIN 스마트팩토리 백엔드 API (Company/ProcessLine 조회 + Auth)",
 )
 
 # ============================================================================
@@ -37,18 +58,34 @@ app = FastAPI(
 # Cross-Origin Resource Sharing (CORS) 미들웨어를 추가합니다
 # 이는 웹 브라우저에서 다른 도메인의 API를 호출할 수 있게 해줍니다
 app.add_middleware(
+    # CORSMiddleware,
+    # allow_origins=["*"],        # 모든 도메인에서의 요청 허용 (개발용)
+    # allow_credentials=True,     # 쿠키, 인증 헤더 등 허용
+    # allow_methods=["*"],      # 모든 메서드만 허용 (조회 전용 API)
+    # allow_headers=["*"],        # 모든 헤더 허용
+
     CORSMiddleware,
-    allow_origins=["*"],        # 모든 도메인에서의 요청 허용 (개발용)
-    allow_credentials=True,     # 쿠키, 인증 헤더 등 허용
-    allow_methods=["*"],      # 모든 메서드만 허용 (조회 전용 API)
-    allow_headers=["*"],        # 모든 헤더 허용
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        # "*"  # 개발 편의를 위해 전체 허용. 운영에서는 제거하세요.
+    ],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["Authorization", "Content-Type"],  # 필요한 헤더만
 )
 
 # ============================================================================
 # API 라우터 등록
 # ============================================================================
-app.include_router(company_controller.router, prefix="/smartFactory")
-app.include_router(process_line_controller.router, prefix="/smartFactory")
+
+# 조회 도메인
+app.include_router(company_router, prefix="/smartFactory")
+app.include_router(process_router, prefix="/smartFactory")
+
+# ✅ 인증 도메인 (/auth/login, /auth/me 등)
+app.include_router(auth_router)
+
 # ============================================================================
 # 기본 엔드포인트 정의
 # ============================================================================
@@ -68,11 +105,48 @@ async def root():
             - company_endpoint: Company 조회 엔드포인트 경로
     """
     return {
-        "message": "AJIN Company 조회 API",                    # API 이름
-        "description": "아진산업 스마트팩토리 백엔드 API 호출부 입니다",  # API 설명
-        "docs": "/docs",                                       # Swagger UI 문서 링크
-        "company_endpoint": "/smartFactory/"             # Company 조회 엔드포인트
+        "message": "AJIN Backend 조회 API",                           # API 이름
+        "description": "아진산업 스마트팩토리 백엔드 API 호출부 입니다",    # API 설명
+        "docs": "/docs",                                              # Swagger UI 문서 링크
+        "endpoints": {                                                # Member 조회 엔드포인트
+            "auth_login": "POST /auth/login",                           
+            "auth_me": "GET /auth/me",
+            "company": "GET /smartFactory/ ...",
+            "process_line": "GET /smartFactory/ ...",
+        },
     }
+
+    # return {
+    #     "message": "AJIN Company 조회 API",                    # API 이름
+    #     "description": "아진산업 스마트팩토리 백엔드 API 호출부 입니다",  # API 설명
+    #     "docs": "/docs",                                       # Swagger UI 문서 링크
+    #     "company_endpoint": "/smartFactory/"             # Company 조회 엔드포인트
+    # }
+
+
+# 헬스 체크 엔드포인트 추가
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "message": "API server is healthy"}
+
+# 대시보드(Analytics) 더미 데이터 응답 (엔드포인트 추가)
+@app.get("/analytics")
+def analytics_stub():
+    return {
+        "kpis": {
+            "visitors": 50873,
+            "customers": 6452,
+            "sales": 92000,
+            "orders": 3240,
+            "conversionRate": 0.207
+        },
+    }
+
+# 혹시 프론트가 /api/analytics 로 호출하는 경우 대비
+@app.get("/api/analytics")
+def analytics_stub_compat():
+    return analytics_stub()
+
 
 
 # ============================================================================
