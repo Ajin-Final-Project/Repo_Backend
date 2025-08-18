@@ -17,6 +17,7 @@ from fastapi import FastAPI  # FastAPI 애플리케이션 생성용
 from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어
 from app.controllers import company_controller  # Company 컨트롤러 모듈
 from app.controllers import process_line_controller
+from app.controllers import production_grid_controller
 
 # ============================================================================
 # FastAPI 애플리케이션 생성 및 설정
@@ -49,6 +50,7 @@ app.add_middleware(
 # ============================================================================
 app.include_router(company_controller.router, prefix="/smartFactory")
 app.include_router(process_line_controller.router, prefix="/smartFactory")
+app.include_router(production_grid_controller.router, prefix="/smartFactory")
 # ============================================================================
 # 기본 엔드포인트 정의
 # ============================================================================
