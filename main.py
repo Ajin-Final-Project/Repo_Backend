@@ -34,7 +34,7 @@ from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어
 from app.controllers.auth_controller import router as auth_router # Company 컨트롤러 모듈
 from app.controllers.company_controller import router as company_router
 from app.controllers.process_line_controller import router as process_router # ✅ 추가: 인증 라우터
-from app.controllers import production_grid_controller
+from app.controllers.production_grid_controller import router as production_grid_router
 
 # ============================================================================
 # FastAPI 애플리케이션 생성 및 설정
@@ -83,11 +83,11 @@ app.add_middleware(
 # 조회 도메인
 app.include_router(company_router, prefix="/smartFactory")
 app.include_router(process_router, prefix="/smartFactory")
+app.include_router(production_grid_router, prefix="/smartFactory")
 
 # ✅ 인증 도메인 (/auth/login, /auth/me 등)
 app.include_router(auth_router)
 
-app.include_router(production_grid_controller.router, prefix="/smartFactory")
 # ============================================================================
 # 기본 엔드포인트 정의
 # ============================================================================

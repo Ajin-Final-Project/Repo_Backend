@@ -9,3 +9,6 @@ sqlalchemy
 
 # MySQL/MariaDB 데이터베이스 연결 드라이버 - Python용 MySQL 클라이언트
 pymysql 
+
+# JWT(JSON Web Token) 발급 및 검증 라이브러리 - 사용자 인증 및 보안 토큰 관리
+PyJWT==2.9.0 # pip install pyjwt

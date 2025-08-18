@@ -17,7 +17,7 @@ DB_HOST = "database-1.c3asgoye8svw.ap-northeast-2.rds.amazonaws.com"  # 데이�
 DB_PORT = 3306  # MariaDB 기본 포트
 DB_USER = "ajin"  # 데이터베이스 사용자명
 DB_PASSWORD = "agin1234"  # 데이터베이스 비밀번호
-DB_NAME = "AJIN"  # 연결할 데이터베이스 이름
+DB_NAME = "AJIN_newDB"  # 연결할 데이터베이스 이름
 
 # ============================================================================
 # 데이터베이스 URL 구성
