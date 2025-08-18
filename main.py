@@ -59,21 +59,11 @@ app = FastAPI(
 # Cross-Origin Resource Sharing (CORS) 미들웨어를 추가합니다
 # 이는 웹 브라우저에서 다른 도메인의 API를 호출할 수 있게 해줍니다
 app.add_middleware(
-    # CORSMiddleware,
-    # allow_origins=["*"],        # 모든 도메인에서의 요청 허용 (개발용)
-    # allow_credentials=True,     # 쿠키, 인증 헤더 등 허용
-    # allow_methods=["*"],      # 모든 메서드만 허용 (조회 전용 API)
-    # allow_headers=["*"],        # 모든 헤더 허용
-
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        # "*"  # 개발 편의를 위해 전체 허용. 운영에서는 제거하세요.
-    ],
+    allow_origins=["*"],                     # ✅ 모든 도메인/포트 허용
     allow_credentials=False,
     allow_methods=["*"],
-    allow_headers=["Authorization", "Content-Type"],  # 필요한 헤더만
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # ============================================================================
