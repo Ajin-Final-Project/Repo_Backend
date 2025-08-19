@@ -38,7 +38,7 @@ from app.controllers.production_grid_controller import router as production_grid
 from app.controllers.defect_grid_controller import router as defect_grid_router
 from app.controllers import downtime_grid_controller # Downtime(비가동) 컨트롤러 모듈
 from app.controllers.user_grid_controller import router as user_grid_router
-
+from app.controllers.production_chart_controller import router as production_chart_router
 # ============================================================================
 # FastAPI 애플리케이션 생성 및 설정
 # ============================================================================
@@ -80,6 +80,8 @@ app.include_router(production_grid_router, prefix="/smartFactory")
 app.include_router(defect_grid_router, prefix="/smartFactory")  # ✅ 추가
 app.include_router(downtime_grid_controller.router, prefix="/smartFactory")
 app.include_router(user_grid_router, prefix="/smartFactory")  # ✅ /smartFactory/user_grid/...
+app.include_router(production_chart_router, prefix="/smartFactory")
+
 
 # ✅ 인증 도메인 (/auth/login, /auth/me 등)
 app.include_router(auth_router)
