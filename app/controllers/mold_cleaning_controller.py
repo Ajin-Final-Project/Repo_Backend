@@ -4,7 +4,7 @@ from app.services.mold_cleaning_service import Mold_cleaning_service
 from app.models.mold_cleaning import MoldCleaningCycleRequest
 
 
-router = APIRouter(prefix="/mold_cleaning", tags=["mold_cleaning"])
+router = APIRouter(prefix="/mold_cleaning", tags=["mold"])
 service = Mold_cleaning_service()
 
 
