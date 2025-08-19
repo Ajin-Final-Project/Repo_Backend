@@ -93,7 +93,7 @@ app.include_router(user_grid_router, prefix="/smartFactory")  # ✅ /smartFactor
 # 금형 세척
 app.include_router(mold_cleaning_router, prefix= "/smartFactory")
 # 금형 타수
-app.include_router(mold_shotCount_router, prefix= "/smartFactory ")
+app.include_router(mold_shotCount_router, prefix= "/smartFactory")
 
 
 # ✅ 인증 도메인 (/auth/login, /auth/me 등)

@@ -4,7 +4,7 @@ from app.services.model_shotCount_service import Mold_shotCount_service
 from app.models.moldShotCount import moldShotCount
 
 
-router = APIRouter(prefix="/mold_shoutCount", tags=["mold"])
+router = APIRouter(prefix="/mold_shotCount", tags=["mold"])
 service = Mold_shotCount_service()
 
 
