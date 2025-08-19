@@ -92,6 +92,7 @@ app.include_router(downtime_grid_controller.router, prefix="/smartFactory")
 app.include_router(user_grid_router, prefix="/smartFactory")  # ✅ /smartFactory/user_grid/...
 # 금형 세척
 app.include_router(mold_cleaning_router, prefix= "/smartFactory")
+# 금형 타수
 app.include_router(mold_shotCount_router, prefix= "/smartFactory ")
 
 
