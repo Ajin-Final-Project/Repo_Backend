@@ -44,6 +44,8 @@ from app.controllers.inspection_grid_controller import router as inspection_grid
 
 from app.controllers.mold_cleaning_controller import router as mold_cleaning_router # 금형세척 라우터
 from app.controllers.mold_shotCount_controller import router as mold_shotCount_router #금형타수 라우터
+
+from app.controllers.inspection_chart_controller import router as inspection_chart_router # 검사 시스템 라우터
 # ============================================================================
 # FastAPI 애플리케이션 생성 및 설정
 # ============================================================================
@@ -96,6 +98,7 @@ app.include_router(mold_cleaning_router, prefix= "/smartFactory")
 # 금형 타수
 app.include_router(mold_shotCount_router, prefix= "/smartFactory")
 # 초 중 종 검사내역
+app.include_router(inspection_chart_router, prefix="/smartFactory")
 app.include_router(inspection_grid_router, prefix="/smartFactory")
 
 # ✅ 인증 도메인 (/auth/login, /auth/me 등)
