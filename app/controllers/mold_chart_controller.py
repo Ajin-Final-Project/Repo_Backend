@@ -79,6 +79,21 @@ async def get_mold_breakdown_pie_top10(req: MoldBreakdownRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"고장 TOP 10 파이 차트 조회 중 오류가 발생했습니다: {str(e)}")
 
+@router.get("/equipment-list")
+async def get_distinct_equipment_list():
+    """
+    금형고장내역 테이블에서 distinct 설비내역 목록 조회
+    """
+    try:
+        result = mold_chart_service.get_distinct_equipment_list()
+        return {
+            "success": True,
+            "data": result,
+            "message": "설비내역 목록을 성공적으로 조회했습니다."
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"설비내역 목록 조회 중 오류가 발생했습니다: {str(e)}")
+
 
 
 

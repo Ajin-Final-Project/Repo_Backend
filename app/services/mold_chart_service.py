@@ -285,4 +285,25 @@ class Mold_chart_service:
         finally:
             db.close()
 
+    def get_distinct_equipment_list(self):
+        """
+        금형고장내역 테이블에서 distinct 설비내역 목록 조회
+        """
+        db: Session = next(get_db())
+        try:
+            sql = text("""
+                SELECT DISTINCT(설비내역) 
+                FROM 금형고장내역 
+                WHERE 설비내역 IS NOT NULL 
+                ORDER BY 설비내역;
+            """)
+            
+            print(f"SQL: {sql}")
+            
+            data = db.execute(sql).mappings().all()
+            return [dict(r) for r in data]
+        
+        finally:
+            db.close()
+
 mold_chart_service = Mold_chart_service()
