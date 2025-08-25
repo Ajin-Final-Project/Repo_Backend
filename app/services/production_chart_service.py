@@ -131,4 +131,15 @@ class Production_chart_service:
         finally:
             db.close()
 
+    def get_live_chart(self, req: ProductionGridResquest):
+        db: Session = next(get_db())
+        try:
+           sql = text("""
+                SELECT 근무일자, sum(생산수량) FROM 생산내역 GROUP BY 근무일자 
+            """)
+           data = db.execute(sql).mappings().all()
+           return data  
+        finally:
+           db.close() 
+
 production_chart_service = Production_chart_service()
