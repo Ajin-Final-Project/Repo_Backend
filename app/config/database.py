@@ -1,101 +1,53 @@
 """
-데이터베이스 연결 모듈
-이 모듈은 MariaDB 데이터베이스와의 연결을 설정하고 관리합니다.
-SQLAlchemy를 사용하여 데이터베이스 엔진과 세션을 생성합니다.
+DB 연결 모듈 (SQLAlchemy + MariaDB/RDS)
+- 커넥션 풀/헬스체크/재활용 설정으로 Too many connections 예방
 """
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-# SQLAlchemy 라이브러리에서 필요한 기능들을 가져옵니다
-from sqlalchemy import create_engine  # 데이터베이스 엔진 생성용
-from sqlalchemy.orm import sessionmaker  # 데이터베이스 세션 생성용
-from sqlalchemy.ext.declarative import declarative_base  # ORM 모델 기본 클래스 생성용
+# === 환경변수로 민감정보 관리 (하드코딩 금지) ===
+DB_HOST = os.getenv("DB_HOST", "database-1.c3asgoye8svw.ap-northeast-2.rds.amazonaws.com")
+DB_PORT = int(os.getenv("DB_PORT", "3306"))
+DB_USER = os.getenv("DB_USER", "ajin")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "agin1234")
+DB_NAME = os.getenv("DB_NAME", "AJIN_newDB")
 
-# ============================================================================
-# 데이터베이스 연결 정보 설정
-# ============================================================================
-# AWS RDS MariaDB 인스턴스의 연결 정보를 직접 하드코딩합니다
-DB_HOST = "database-1.c3asgoye8svw.ap-northeast-2.rds.amazonaws.com"  # 데이터베이스 서버 주소
-DB_PORT = 3306  # MariaDB 기본 포트
-DB_USER = "ajin"  # 데이터베이스 사용자명
-DB_PASSWORD = "agin1234"  # 데이터베이스 비밀번호
-DB_NAME = "AJIN_newDB"  # 연결할 데이터베이스 이름
-
-# ============================================================================
-# 데이터베이스 URL 구성
-# ============================================================================
-# SQLAlchemy가 사용할 데이터베이스 연결 문자열을 생성합니다
-# 형식: mysql+pymysql://사용자명:비밀번호@호스트:포트/데이터베이스명
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# 연결 시도 정보를 콘솔에 출력합니다 (디버깅용)
-print(f"데이터베이스 연결 시도: {DB_HOST}:{DB_PORT}/{DB_NAME}")
+print(f"[DB] connecting to {DB_HOST}:{DB_PORT}/{DB_NAME}")
 
-# ============================================================================
-# SQLAlchemy 엔진 생성
-# ============================================================================
-# create_engine() 함수를 사용하여 데이터베이스 연결 엔진을 생성합니다
-# 이 엔진은 데이터베이스와의 물리적 연결을 관리합니다
-engine = create_engine(DATABASE_URL)
+# === 엔진(프로세스 전역에 단 1개) ===
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=10,          # 기본 풀 사이즈
+    max_overflow=20,       # 초과 허용 커넥션
+    pool_timeout=30,       # 풀에서 커넥션 얻기 대기시간
+    pool_recycle=1800,     # 30분마다 재활용(오래된 커넥션 정리)
+    pool_pre_ping=True,    # 죽은 커넥션 감지/복구
+    future=True,
+)
 
-# ============================================================================
-# Base 클래스 생성
-# ============================================================================
-# declarative_base()를 사용하여 ORM 모델의 기본 클래스를 생성합니다
-# 모든 모델 클래스는 이 Base 클래스를 상속받아야 합니다
 Base = declarative_base()
 
-# ============================================================================
-# 세션 메이커 생성
-# ============================================================================
-# sessionmaker()를 사용하여 데이터베이스 세션을 생성하는 팩토리를 만듭니다
-# autocommit=False: 자동 커밋을 비활성화 (트랜잭션 제어를 위해)
-# autoflush=False: 자동 플러시를 비활성화 (성능 향상을 위해)
-# bind=engine: 위에서 생성한 엔진을 사용
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# 세션팩토리 (autocommit/autoflush 비활성)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 
-# ============================================================================
-# 데이터베이스 세션 생성 함수
-# ============================================================================
 def get_db():
-    """
-    데이터베이스 세션을 생성하고 반환하는 함수
-    
-    이 함수는 FastAPI의 의존성 주입 시스템에서 사용됩니다.
-    각 API 요청마다 새로운 데이터베이스 세션을 생성하고,
-    요청이 완료되면 자동으로 세션을 닫습니다.
-    
-    Returns:
-        Session: SQLAlchemy 데이터베이스 세션 객체
-        
-    Yields:
-        Session: 데이터베이스 세션을 yield로 반환 (제너레이터 패턴)
-    """
-    # SessionLocal()을 호출하여 새로운 데이터베이스 세션을 생성합니다
+    """FastAPI Depends에서 사용: 요청마다 세션 열고 반드시 닫기"""
     db = SessionLocal()
-    
     try:
-        # 세션을 yield로 반환합니다 (FastAPI가 이 세션을 사용)
         yield db
-        
     finally:
-        # try 블록이 완료되거나 예외가 발생하면 항상 실행됩니다
-        # 데이터베이스 세션을 안전하게 닫습니다
         db.close()
 
-# ============================================================================
-# 테이블 생성 함수
-# ============================================================================
 def create_tables():
-    """
-    모든 ORM 모델에 정의된 테이블을 데이터베이스에 생성하는 함수
-    
-    이 함수는 애플리케이션 시작 시 한 번만 호출되어야 합니다.
-    Base.metadata.create_all()을 사용하여 모든 모델의 테이블을 생성합니다.
-    """
+    """초기 테이블 생성(필요할 때만)"""
     try:
-        # Base 클래스에 등록된 모든 모델의 테이블을 생성합니다
         Base.metadata.create_all(bind=engine)
-        print("데이터베이스 테이블 생성 성공")
+        print("[DB] table creation success")
     except Exception as e:
-        print(f"데이터베이스 테이블 생성 실패: {e}")
-        # 테이블 생성 실패해도 애플리케이션은 계속 실행됩니다
-        pass
+        print(f"[DB] table creation failed: {e}")
+
+# (선택) FastAPI 애플리케이션 종료 시 커넥션 정리:
+# app.add_event_handler("shutdown", lambda: engine.dispose())
