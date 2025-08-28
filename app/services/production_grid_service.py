@@ -41,9 +41,9 @@ class Production_grid_service:
                 where_conditions.append("`책임자` = :worker")
                 params["worker"] = req.worker
 
-            if has_value(req.workplace):
-                where_conditions.append("`작업장` = :workplace")
-                params["workplace"] = req.workplace
+            if has_value(req.line):
+                where_conditions.append("`작업장` = :line")
+                params["line"] = req.line
 
             if has_value(req.itemCode):
                 where_conditions.append("`자재번호` = :itemCode")

@@ -7,7 +7,7 @@ class ProductionGridResquest(BaseModel):
     productionNumber: Optional[str] = None # 실적번호
     plant: Optional[str] = None            # 플랜트
     worker: Optional[str] = None           # 책임자
-    workplace: Optional[str] = None        # 작업장
+    line: Optional[str] = None        # 작업장
     itemCode: Optional[str] = None         # 품목코드
     itemName: Optional[str] = None         # 품목이름
     carModel: Optional[str] = None         # 차종
@@ -22,3 +22,4 @@ class ProductionGridResquest(BaseModel):
     componentDeliveryCount: Optional[int] = None # 구성품출고
     constructor: Optional[str] = None      # 생성자
     createDate: Optional[str] = None       # 생성일
+    workplace: Optional[str] = None

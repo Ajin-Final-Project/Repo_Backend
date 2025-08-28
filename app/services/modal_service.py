@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 class Modal_service:
 
-    def get_item_list(self, item: str | None , line: str| None):
+    def get_item_list(self, item: str | None ,plant: str|None, worker: str|None, line: str| None):
         db: Session = next(get_db())
         try:
             params = {}
@@ -15,10 +15,14 @@ class Modal_service:
             inner_where_sql = ""
             outer_where_sql = ""
             
-            if line :
+            if plant and worker and line :
                 params["line"] = line
-                inner_where_sql +=  "AND 작업장 = :line"
-                outer_where_sql += "AND 작업장 = :line"
+                params["plant"] = plant
+                params["worker"] = worker
+
+
+                inner_where_sql +=  "AND 플랜트 = :plant AND 책임자 = :worker AND 작업장 = :line"
+                outer_where_sql += "AND 플랜트 = :plant AND 책임자 = :worker AND 작업장 = :line"
 
                 
             if item:
