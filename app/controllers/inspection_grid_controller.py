@@ -14,8 +14,7 @@ def get_inspection_list(request: inspectionGridRequest):
     try:
         print(request)
         data = service.get_inspection_list(request)
-        
-        print('data============', data)
+
         return {
             "message": "검사내역 테이블 조회 성공",
             "count": len(data),

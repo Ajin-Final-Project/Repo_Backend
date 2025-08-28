@@ -16,7 +16,6 @@ class ItemListReq(BaseModel):
 @router.post("/item_list")
 def get_item_list(req :ItemListReq):
     try:
-        print(req)
         data = service.get_item_list(req.item, req.plant, req.worker, req.line)
         return {
             "message": "품목 테이블 조회 성공",

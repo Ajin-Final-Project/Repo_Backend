@@ -85,9 +85,9 @@ class Production_grid_service:
                 where_conditions.append("`생산수량` = :productionItemNumber")
                 params["productionItemNumber"] = req.productionItemNumber
 
-            if has_value(req.processBadItemNumber):
-                where_conditions.append("`공정불량` = :processBadItemNumber")
-                params["processBadItemNumber"] = req.processBadItemNumber
+            if has_value(req.processBadItemCount):
+                where_conditions.append("`공정불량` = :processBadItemCount")
+                params["processBadItemCount"] = req.processBadItemCount
 
             if has_value(req.componentDeliveryCount):
                 where_conditions.append("`구성품출고` = :componentDeliveryCount")
