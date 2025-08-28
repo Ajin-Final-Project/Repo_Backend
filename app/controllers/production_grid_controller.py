@@ -14,7 +14,7 @@ def get_production_list(request: ProductionGridResquest):
     try:
         print(request)
         data = service.get_production_list(request)
-        
+    
         return {
             "message": "ProcessLine 테이블 조회 성공",
             "count": len(data),
