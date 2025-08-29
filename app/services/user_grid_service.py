@@ -139,6 +139,9 @@
   예) {"ID": "...", "PW": "...", "이름": "...", "나이": 29, "부서": "...", "메일": "...", "주소": "...", "전화번호": "..."}
 - 동적 WHERE 절(값 있는 것만 조건 추가) + 바인딩 파라미터로 안전하게 실행
 - 조회 테이블: AJIN_newDB.회원정보
+- 새 테이블 반영: 본부/직급/권한 필터 및 SELECT 포함
+- 보안: PW WHERE/SELECT 완전 제거
+- 나이 범위(age_min/age_max) 지원 (age가 있으면 age 우선)
 
 ⚠ 보안 주의:
 - 현재 PW를 평문 그대로 내려줍니다. 운영/배포 환경에서는 반드시 마스킹 또는 해시 저장을 적용하세요.
@@ -166,10 +169,12 @@ class UserGridService:
             s = value.strip().lower()
             return s != "" and s != "string"
         if isinstance(value, int):
-            return value != 0
-        return True
+            return value != 0   # 0도 유효하게 보려면 True, 불필요하면 value != 0
+        return True 
 
     def get_user_list(self, req: UserGridRequest):
+        # 🔄 호환: 기존 position → rank로 병합
+        rank = req.rank or req.position
         """
         [회원정보 목록 조회]
         - req에 값이 있는 필드만 WHERE 조건으로 반영
@@ -189,9 +194,9 @@ class UserGridService:
                 params["user_id"] = req.user_id
 
             # PW (부분 검색)  ※ 운영 시 평문 노출 지양
-            if hv(req.pw):
-                where.append("`PW` LIKE :pw")
-                params["pw"] = f"%{req.pw.strip()}%"
+            # if hv(req.pw):
+            #     where.append("`PW` LIKE :pw")
+            #     params["pw"] = f"%{req.pw.strip()}%"
 
             # 이름 (부분 검색)
             if hv(req.name):
@@ -203,13 +208,37 @@ class UserGridService:
                 where.append("`나이` = :age")
                 params["age"] = req.age
 
+             # 🔄 정책: age가 주어지면 정확 일치 우선, 없으면 범위(age_min/age_max) 적용
+            else:
+                if hv(req.age_min):
+                    where.append("`나이` >= :age_min")   # 추가
+                    params["age_min"] = req.age_min
+                if hv(req.age_max):
+                    where.append("`나이` <= :age_max")   # 추가
+                    params["age_max"] = req.age_max
+
+            # 본부/부서 (부분 검색) — 새 테이블 반영
+            if hv(req.hq):
+                where.append("`본부` LIKE :hq")          # 추가
+                params["hq"] = f"%{req.hq.strip()}%"
+
             # 부서 (정확 일치) — 생산내역 서비스 스타일에 맞춤
             # 부분 검색 원하면 아래 두 줄을 주석 처리하고 LIKE 버전으로 교체하세요.
             if hv(req.dept):
-                where.append("`부서` = :dept")
-                params["dept"] = req.dept
-                # where.append("`부서` LIKE :dept")
-                # params["dept"] = f"%{req.dept.strip()}%"
+            #     where.append("`부서` = :dept")
+            #     params["dept"] = req.dept
+                where.append("`부서` LIKE :dept")
+                params["dept"] = f"%{req.dept.strip()}%"
+
+            # 직급 (부분 검색)
+            if hv(rank):
+                where.append("`직급` LIKE :rank")        # 추가
+                params["rank"] = f"%{rank.strip()}%"
+
+            # 권한 (정확 일치: ENUM)
+            if hv(req.role):
+                where.append("`권한` = :role")          # 추가
+                params["role"] = req.role
 
             # 이메일/전화/주소 (부분 검색)
             if hv(req.email):
@@ -232,15 +261,19 @@ class UserGridService:
             sql = f"""
                 SELECT
                     `ID`,
-                    `PW`,
+                    -- `PW`,                      -- 제거: 비밀번호는 응답에서 제외
                     `이름`,
                     `나이`,
+                    `본부`,                         -- 추가
                     `부서`,
+                    `직급`,                         -- 추가
+                    `권한`,                         -- 추가
                     `메일`,
                     `주소`,
                     `전화번호`
                 FROM `AJIN_newDB`.`회원정보`
                 WHERE {' AND '.join(where)}
+                -- ORDER BY `이름` ASC, `ID` ASC
             """
             # 생산내역 서비스 스타일에 맞춰 ORDER BY 없음.
             # 정렬이 필요하면 아래 주석을 해제하세요.

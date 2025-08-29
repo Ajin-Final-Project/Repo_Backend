@@ -20,7 +20,7 @@ service = user_grid_service
 def get_user_grid_list(request: UserGridRequest):
     """
     POST /user_grid/list
-    - Body(JSON)로 전달된 필터(부서/직책/나이/이메일 등)를 받아 회원정보 목록 조회
+    - Body(JSON)로 전달된 필터(본부/부서/직급/권한/나이 등)를 받아 회원정보 목록 조회
     - 성공: { message, count, data }
     - 실패: { message, error }
     """
