@@ -1,15 +1,15 @@
 from fastapi import APIRouter
 from typing import List, Optional
-from app.services.model_shotCount_service import Mold_shotCount_service
+from app.services.mold_shot_check_service import Mold_shot_check_service
 from app.models.moldShotCount import moldShotCount
 
 router = APIRouter(prefix="/mold_shot_check", tags=["mold"])
-service = Mold_shotCount_service()
+service = Mold_shot_check_service()
 
 @router.post("/list")
 def get_mold_shot_check_list(request: moldShotCount):
     try:
-        data = service.get_moldShotCount_list(request)
+        data = service.get_moldShotCheck_list(request)
         return {
             "message": "금형 Shot 체크 데이터 조회 성공",
             "count": len(data),
