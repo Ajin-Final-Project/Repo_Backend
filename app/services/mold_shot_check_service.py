@@ -17,6 +17,7 @@ class Mold_shot_check_service:
                     s = v.strip()
                     return s != "" and s.lower() != "string"
                 return True
+           
 
             # === 생산내역 필터링 조건 ===
             if has_value(req.plant):
@@ -117,9 +118,9 @@ class Mold_shot_check_service:
                     SELECT DISTINCT
                            플랜트, 책임자, 작업장, 자재번호, 자재명
                     FROM AJIN_newDB.생산내역
-                    WHERE 플랜트 = '아진산업-경산(본사)'
-                      AND 책임자 = '프레스'
-                      AND 작업장 = '1500T'
+                    WHERE 플랜트 = :plant
+                      AND 책임자 = :responsible_person
+                      AND 작업장 = :work_center
                       AND 자재번호 IS NOT NULL AND TRIM(자재번호) <> ''
                       AND 자재명   IS NOT NULL AND TRIM(자재명)   <> ''
                 )
