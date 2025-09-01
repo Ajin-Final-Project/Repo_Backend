@@ -45,6 +45,7 @@ from app.controllers.inspection_grid_controller import router as inspection_grid
 
 from app.controllers.mold_cleaning_controller import router as mold_cleaning_router # 금형세척 라우터
 from app.controllers.mold_shotCount_controller import router as mold_shotCount_router #금형타수 라우터
+from app.controllers.mold_shot_check_controller import router as mold_shot_check_router #금형 Shot 체크 라우터
 
 from app.controllers.inspection_chart_controller import router as inspection_chart_router # 검사 시스템 라우터
 from app.controllers.mold_breakDown_controller import router as mold_breakDown_router #금형고장 라우터
@@ -102,6 +103,8 @@ app.include_router(user_grid_router, prefix="/smartFactory")  # ✅ /smartFactor
 app.include_router(mold_cleaning_router, prefix= "/smartFactory")
 # 금형 타수
 app.include_router(mold_shotCount_router, prefix= "/smartFactory")
+# 금형 Shot 체크
+app.include_router(mold_shot_check_router, prefix= "/smartFactory")
 #금형 고장
 app.include_router(mold_breakDown_router, prefix="/smartFactory")
 # 초 중 종 검사내역
