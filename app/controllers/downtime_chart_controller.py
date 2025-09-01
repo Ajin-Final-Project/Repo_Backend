@@ -1,12 +1,12 @@
 # app/controllers/downtime_chart_controller.py
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Body
 from app.services.downtime_chart_service import downtime_chart_service
 from app.models.downtimeGrid import DowntimeGridResquest
 
 router = APIRouter(prefix="/downtime_chart", tags=["downtime"])
 
-# -------- GET /item-codes : 쿼리스트링 키를 프론트와 1:1로 맞춤 --------
+# -------- GET /item-codes : 프론트 쿼리스트링과 1:1 매핑 --------
 @router.get("/item-codes")
 def get_item_codes(
     workplace: Optional[str] = None,
@@ -24,23 +24,25 @@ def get_item_codes(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"자재번호 조회 실패: {e}")
 
-# 나머지는 바디에 모델 그대로 받되, 에러는 500으로
+# -------- POST /summary : top은 쿼리파라미터로 (프론트에서 ?top=3 전송) --------
 @router.post("/summary")
-def get_summary(request: DowntimeGridResquest):
+def get_summary(req: DowntimeGridResquest, top: int = Query(3, ge=1, le=10)):
     try:
-        data = downtime_chart_service.get_summary(request)
+        data = downtime_chart_service.get_summary(req, top_n=top)
         return {"message": "summary 조회 성공", "data": data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"summary 조회 실패: {e}")
 
+# -------- POST /monthly --------
 @router.post("/monthly")
-def get_monthly(request: DowntimeGridResquest):
+def get_monthly(req: DowntimeGridResquest):
     try:
-        data = downtime_chart_service.get_monthly(request)
+        data = downtime_chart_service.get_monthly(req)
         return {"message": "monthly 조회 성공", "data": data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"monthly 조회 실패: {e}")
 
+# -------- POST /pie : 프론트가 body로 top/withOthers 보내도 파싱되도록 Body(...) 사용 --------
 @router.post("/pie")
 def get_pie(request: DowntimeGridResquest, top:int=5, withOthers:bool=True):
     try:
