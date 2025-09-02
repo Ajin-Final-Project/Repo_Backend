@@ -51,6 +51,10 @@ from app.controllers.inspection_chart_controller import router as inspection_cha
 from app.controllers.mold_breakDown_controller import router as mold_breakDown_router #금형고장 라우터
 from app.controllers.mold_chart_controller import router as mold_chart_router
 from app.controllers.modal_controller import router as modal_router
+
+from app.controllers.product_forecast_controller import router as product_forecast_router # 생산량예측 라우터
+from app.controllers.bottleneck_overview_controller import router as bottleneck_overview_router #병목예측 라우터
+
 # ============================================================================
 # FastAPI 애플리케이션 생성 및 설정
 # ============================================================================
@@ -114,6 +118,10 @@ app.include_router(inspection_grid_router, prefix="/smartFactory")
 app.include_router(mold_chart_router, prefix="/smartFactory")
 
 app.include_router(modal_router, prefix='/smartFactory')
+
+# AI 시스템 (생산량, 병목)
+app.include_router(product_forecast_router, prefix="/smartFactory")
+app.include_router(bottleneck_overview_router, prefix="/smartFactory")
 
 # ✅ 인증 도메인 (/auth/login, /auth/me 등)
 app.include_router(auth_router)
