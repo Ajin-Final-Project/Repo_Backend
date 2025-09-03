@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.config.database import get_db
 from app.models.mold_BreakDown import MoldBreakdownRequest
+from fastapi import HTTPException
 import re
 from datetime import date
 
@@ -206,30 +207,35 @@ class Mold_chart_service:
     def get_mold_breakDown_chart(self, req: MoldBreakdownRequest):
         db: Session = next(get_db())
         try:
+          
             params = {
-                "equipment": req.equipment_detail,
+                "plant": req.plant,
+                "worker": req.worker,
+                "line": req.line,
+                "itemCd": req.itemCd,
                 "start_date": req.start_date,
                 "end_date": req.end_date
             }
-
+            print(params)
             sql = text("""
-                  WITH RECURSIVE months AS (
-                    SELECT DATE_FORMAT(:start_date, '%Y-%m-01') AS ymd
-                    UNION ALL
-                    SELECT DATE_FORMAT(DATE_ADD(ymd, INTERVAL 1 MONTH), '%Y-%m-01')
-                    FROM months
-                    WHERE ymd < DATE_FORMAT(:end_date, '%Y-%m-01')
+                  WITH prod_filt AS (
+                    SELECT DISTINCT 플랜트, 책임자, 작업장, 자재번호, 자재명
+                    FROM AJIN_newDB.생산내역
+                    WHERE 플랜트 = :plant
+                      AND 책임자 = :worker
+                      AND 작업장 = :line
+                      AND 자재번호 = :itemCd
                   )
                   SELECT
-                    DATE_FORMAT(m.ymd, '%Y-%m') AS ym,
-                    COALESCE(COUNT(g.오더번호), 0) AS 고장건수
-                  FROM months m
-                  LEFT JOIN 금형고장내역 g
-                    ON DATE_FORMAT(g.기본시작일, '%Y-%m') = DATE_FORMAT(m.ymd, '%Y-%m')
-                  AND g.오더유형내역 = '고장점검(BM)'
-                  AND g.기본시작일 >= :start_date
-                  AND g.기본시작일 <= :end_date
-                  AND (:equipment IS NULL OR g.설비내역 = :equipment)
+                    DATE_FORMAT(b.기본종료일, '%Y-%m') AS ym,   -- 월 단위
+                    COUNT(*) AS order_cnt                        -- 오더내역 건수
+                    -- 필요 시: COUNT(DISTINCT b.오더번호) AS order_cnt_distinct
+                  FROM AJIN_newDB.금형고장내역 AS b
+                  JOIN prod_filt AS p
+                    ON b.설비내역 LIKE CONCAT('%', p.자재번호, '%')
+                  WHERE b.오더유형내역 = '고장점검(BM)'
+                    AND b.기본종료일 IS NOT NULL
+                    AND b.기본종료일 between :start_date and :end_date
                   GROUP BY ym
                   ORDER BY ym;
             """)
@@ -238,6 +244,8 @@ class Mold_chart_service:
             print(f"파라미터: {params}")
             
             data = db.execute(sql, params).mappings().all()
+            print("_"*100)
+            print(data)
             return [dict(r) for r in data]
         
         finally:
@@ -301,6 +309,167 @@ class Mold_chart_service:
             print(f"SQL: {sql}")
             
             data = db.execute(sql).mappings().all()
+            return [dict(r) for r in data]
+        
+        finally:
+            db.close()
+
+    def get_breakDown_detail(self,req: MoldBreakdownRequest):
+        db: Session = next(get_db())
+        try:
+           
+            params = {
+                "plant": req.plant,
+                "worker": req.worker,
+                "line": req.line,
+                "itemCd": req.itemCd,
+                "ym": req.ym,
+                "start_date": req.start_date,
+                "end_date": req.end_date
+            }
+            
+            sql = text("""
+                  WITH prod_filt AS (
+                    SELECT DISTINCT 플랜트, 책임자, 작업장, 자재번호, 자재명
+                    FROM AJIN_newDB.생산내역
+                    WHERE 플랜트 = :plant
+                      AND 책임자 = :worker
+                      AND 작업장 = :line
+                      AND 자재번호 = :itemCd
+                  )
+                  SELECT
+                    DATE_FORMAT(b.기본종료일, '%Y-%m') AS ym, 
+                    b.*
+                  FROM AJIN_newDB.금형고장내역 AS b
+                  JOIN prod_filt AS p
+                    ON b.설비내역 LIKE CONCAT('%', p.자재번호, '%')
+                  WHERE b.오더유형내역 = '고장점검(BM)'
+                    AND b.기본종료일 IS NOT NULL
+                    AND b.기본종료일 BETWEEN :start_date AND :end_date
+                    AND DATE_FORMAT(b.기본종료일, '%Y-%m') = :ym
+                  ORDER BY b.기본종료일 ASC, b.오더번호 ASC;
+            """)
+
+            print(f"SQL: {sql}")
+            print(f"파라미터: {params}")
+            
+            data = db.execute(sql, params).mappings().all()
+            print("_"*100)
+            print(data)
+            return [dict(r) for r in data]
+        
+        finally:
+            db.close()
+
+    def get_mold_cleaning_ranked_data(self, req: MoldBreakdownRequest):
+        """
+        금형세척주기와 금형타발수관리 테이블을 조인하여 설비별 최신 데이터 조회
+        """
+        db: Session = next(get_db())
+        try:
+            params = {
+                "plant": req.plant,
+                "worker": req.worker,
+                "line": req.line,
+                "itemCd": req.itemCd
+            }
+            
+            sql = text("""
+                WITH prod_filt AS (
+                  SELECT DISTINCT 플랜트, 책임자, 작업장, 자재번호, 자재명
+                  FROM AJIN_newDB.생산내역
+                  WHERE 플랜트 = :plant
+                    AND 책임자 = :worker
+                    AND 작업장 = :line
+                    AND 자재번호 IS NOT NULL AND 자재번호 = :itemCd
+                    AND 자재명 IS NOT NULL AND TRIM(자재명) <> ''
+                ),
+                ranked AS (
+                  SELECT
+                      prod.플랜트, prod.책임자, prod.자재번호, prod.자재명,
+                      wash.설비내역, wash.기본시작일, wash.기본종료일,
+                      shot.금형번호,
+                      ROW_NUMBER() OVER (
+                        PARTITION BY wash.설비내역
+                        ORDER BY COALESCE(wash.기본종료일, wash.기본시작일) DESC,
+                                 wash.기본시작일 DESC,
+                                 shot.금형번호 DESC
+                      ) AS rn
+                  FROM AJIN_newDB.금형세척주기 AS wash
+                  JOIN AJIN_newDB.금형타발수관리 AS shot
+                    ON wash.설비내역 = shot.금형내역
+                  JOIN prod_filt AS prod
+                    ON wash.설비내역 LIKE CONCAT('%', prod.자재번호, '%')
+                )
+                SELECT *
+                FROM ranked
+                WHERE rn = 1;
+            """)
+
+            print(f"SQL: {sql}")
+            print(f"파라미터: {params}")
+            
+            data = db.execute(sql, params).mappings().all()
+            print("_"*100)
+            print(data)
+            return [dict(r) for r in data]
+        
+        finally:
+            db.close()
+
+    def get_mold_shot_analysis(self, mold_code: str):
+        """
+        금형타발수관리 테이블에서 특정 금형번호의 점검 분석 데이터 조회
+        """
+        # mold_code가 None이거나 빈 값인 경우 빈 결과 반환
+        if not mold_code or mold_code.strip() == "":
+            print(f"mold_code가 비어있음: {mold_code}")
+            return []
+            
+        db: Session = next(get_db())
+        try:
+            params = {
+                "moldCode": mold_code.strip()
+            }
+            
+            sql = text("""
+                SELECT
+                  `진행률(%)`,
+                  ROUND(`누적 Shot 수` / NULLIF(`유지보수주기`, 0), 2) AS `총 점검수`,
+                  ROUND(`점검타발수` / NULLIF(`유지보수주기` * 0.8, 0) * 100, 2) AS `80프로대비비율(%)`,
+                  CASE
+                    WHEN (`유지보수주기` * 0.8) - `점검타발수` > 0
+                      THEN CONCAT('+', ROUND((`유지보수주기` * 0.8) - `점검타발수`, 2))
+                    WHEN (`유지보수주기` * 0.8) - `점검타발수` = 0
+                      THEN '0.00'
+                    ELSE
+                      ROUND((`유지보수주기` * 0.8) - `점검타발수`, 2)
+                  END AS `80프로대비수치`,
+                  ROUND(`점검타발수` / NULLIF(`유지보수주기` * 0.9, 0) * 100, 2) AS `90프로대비비율(%)`,
+                  CASE
+                    WHEN (`유지보수주기` * 0.9) - `점검타발수` > 0
+                      THEN CONCAT('+', ROUND((`유지보수주기` * 0.9) - `점검타발수`, 2))
+                    WHEN (`유지보수주기` * 0.9) - `점검타발수` = 0
+                      THEN '0.00'
+                    ELSE
+                      ROUND((`유지보수주기` * 0.9) - `점검타발수`, 2)
+                  END AS `90프로대비수치`
+                FROM AJIN_newDB.`금형타발수관리` 
+                WHERE 금형타발수관리.금형번호 = :moldCode;
+            """)
+
+            print(f"SQL: {sql}")
+            print(f"파라미터: {params}")
+            
+            data = db.execute(sql, params).mappings().all()
+            print("_"*100)
+            print(f"조회된 데이터 개수: {len(data)}")
+            print(data)
+            
+            # 데이터가 없는 경우 로그 출력
+            if not data:
+                print(f"금형번호 '{mold_code}'에 대한 데이터를 찾을 수 없습니다.")
+            
             return [dict(r) for r in data]
         
         finally:

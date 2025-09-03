@@ -122,6 +122,8 @@ LEFT JOIN 생산내역_중복제거 s
             """
 
             rows = db.execute(text(sql), params).mappings().all()
+            print(text(sql))
+            print("파람미터", params)
             return [dict(r) for r in rows]
 
         finally:
