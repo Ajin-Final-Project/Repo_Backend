@@ -31,7 +31,17 @@ class BottleneckOverviewService:
                 where_conditions.append("1=1")
 
             sql = f"""
-                SELECT *
+                SELECT   
+                    Time_Now, Bottleneck_actual, Bottleneck_pred,
+                    Blanking_SKU1_Queue, Blanking_SKU2_Queue, Blanking_SKU3_Queue, Blanking_SKU4_Queue,
+                    Press1_Queue, Press2_Queue, Press3_Queue, Press4_Queue,
+                    Cell1_Queue, Cell2_Queue, Cell3_Queue, Cell4_Queue,
+                    Forklift_Blanking_Queue, Forklift_Press_Queue, Forklift_Assembly_Queue,
+                    Cell_SKU1_Queue, Cell_SKU2_Queue, Cell_SKU3_Queue, Cell_SKU4_Queue,
+                    Bottleneck_actual_SKU1, Bottleneck_actual_SKU2, Bottleneck_actual_SKU3, Bottleneck_actual_SKU4,
+                    Bottleneck_pred_SKU1, Bottleneck_pred_SKU2, Bottleneck_pred_SKU3, Bottleneck_pred_SKU4,
+                    Bottleneck_actual_Blanking, Bottleneck_actual_Press, Bottleneck_actual_Cell,
+                    Bottleneck_pred_Blanking, Bottleneck_pred_Press, Bottleneck_pred_Cell
                 FROM AJIN_newDB.bottleneck_overview
                 WHERE {' AND '.join(where_conditions)}
                 ORDER BY Time_Now DESC
