@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from typing import List,Optional
 from app.services.production_chart_service import production_chart_service
-from app.models.productionGrid import ProductionGridResquest 
+from app.models.productionGrid import ProductionGridResquest, UPHProductionRequest 
 
 
 router = APIRouter(prefix="/production_chart", tags=["production"])
@@ -67,7 +67,6 @@ def get_item_list():
 def get_live_chart(request: ProductionGridResquest):
     try:
         data = service.get_live_chart(request)
-        print(len(data))
         return {
             "message": "productionGrid live list 조회 성공",
             "count" : len(data),
@@ -79,6 +78,23 @@ def get_live_chart(request: ProductionGridResquest):
             "message": "production live 조회 실패",
             "error": str(e)
          }
+
+@router.post("/uph-production")
+def get_uph_production_data(request: UPHProductionRequest):
+    try:
+   
+        data = service.get_uph_production_data(request)
+        return {
+            "message": "UPH 생산 데이터 조회 성공",
+            "count": len(data),
+            "data": data
+        }
+    except Exception as e:
+        print(f"UPH 생산 데이터 조회 중 오류 발생: {str(e)}")
+        return {
+            "message": "UPH 생산 데이터 조회 실패",
+            "error": str(e)
+        }
 
 
 

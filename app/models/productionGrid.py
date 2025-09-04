@@ -29,3 +29,12 @@ class ProductionGridResquest(BaseModel):
     constructor: Optional[str] = None      # 생성자
     createDate: Optional[str] = None       # 생성일
     workplace: Optional[str] = None
+
+class UPHProductionRequest(BaseModel):
+    @validator('*', pre=True)
+    def blank_to_none(cls, v):
+        return None if v == '' else v
+    
+    start_date: Optional[str] = None  # 시작일
+    end_date: Optional[str] = None    # 종료일
+    itemCd: Optional[str] = None      # 자재번호

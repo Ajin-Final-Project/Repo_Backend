@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.config.database import get_db
-from app.models.productionGrid import ProductionGridResquest
+from app.models.productionGrid import ProductionGridResquest, UPHProductionRequest
 
 class Production_chart_service:
 
@@ -141,5 +141,44 @@ class Production_chart_service:
            return data  
         finally:
            db.close() 
+
+    def get_uph_production_data(self, req: UPHProductionRequest):
+        db: Session = next(get_db())
+        try:
+            # 기본 파라미터 설정
+            params = {
+                "start_date": req.start_date,
+                "end_date": req.end_date
+            }
+            
+            # 자재번호 조건이 있는 경우 추가
+            item_condition = ""
+            if req.itemCd:
+                item_condition = "AND s.자재번호 = :itemCd"
+                params["itemCd"] = req.itemCd
+            
+            sql = text(f"""
+                SELECT
+                    DATE_FORMAT(s.근무일자, '%Y-%m') AS 년월,
+                    s.자재번호,
+                    s.자재명,
+                    s.작업장,
+                    ROUND(SUM(COALESCE(s.생산수량,0)) / NULLIF(SUM(COALESCE(s.가동시간,0))/60.0, 0), 2) AS UPH_생산,
+                    ROUND(SUM(COALESCE(s.양품수량,0)) / NULLIF(SUM(COALESCE(s.가동시간,0))/60.0, 0), 2) AS UPH_양품,
+                    SUM(COALESCE(s.생산수량,0)) AS 월총생산,
+                    SUM(COALESCE(s.양품수량,0)) AS 월총양품,
+                    SUM(COALESCE(s.가동시간,0)) AS 월총가동분
+                FROM 생산내역 s
+                WHERE s.근무일자 BETWEEN :start_date AND :end_date
+                {item_condition}
+                GROUP BY DATE_FORMAT(s.근무일자, '%Y-%m'), s.자재번호, s.자재명, s.작업장
+                ORDER BY 년월, s.작업장
+            """)
+            
+            data = db.execute(sql, params).mappings().all()
+            return [dict(r) for r in data]
+            
+        finally:
+            db.close()
 
 production_chart_service = Production_chart_service()
