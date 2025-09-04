@@ -1,7 +1,13 @@
 from typing import List,Optional
-from pydantic import BaseModel
+from pydantic import BaseModel,validator
 
 class ProductionGridResquest(BaseModel):
+
+    @validator('*', pre=True)
+    def blank_to_none(cls, v):
+        return None if v == '' else v
+
+
     start_work_date: Optional[str] = None # 시작일
     end_work_date: Optional[str] = None   # 끝나는일
     productionNumber: Optional[str] = None # 실적번호
@@ -18,7 +24,7 @@ class ProductionGridResquest(BaseModel):
     waitItemCount: Optional[int] = None    # 판정대기
     badItemCount: Optional[int] = None     # 불량수량
     productionItemNumber: Optional[int] = None  # 생산수량
-    processBadItemNumber: Optional[int] = None  # 공정불량
+    processBadItemCount: Optional[int] = None  # 공정불량
     componentDeliveryCount: Optional[int] = None # 구성품출고
     constructor: Optional[str] = None      # 생성자
     createDate: Optional[str] = None       # 생성일

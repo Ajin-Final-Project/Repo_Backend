@@ -61,12 +61,20 @@ def login(body: dict, db: Session = Depends(get_db)):
         "sub": user.ID,
         "email": user.메일 or "",
         "name": user.이름,
-        "role": user.부서 or "user",
+        # "role": user.부서 or "user",
+         # ⬇️ 수정: 기존 user.부서 → user.권한 or user.직급
+        # "role": user.직급 or "직원",
     })
 
     return {
         "token": token,
-        "user": {"id": user.ID, "email": user.메일, "name": user.이름, "role": user.부서}
+        "user": {"id": user.ID,
+                 "email": user.메일,
+                 "name": user.이름,
+                 "role": user.부서
+                #   ⬇️ 수정: 기존 user.부서 → user.권한 or user.직급
+                # "role": user.직급
+                 }
     }
 
 @router.get("/me")
@@ -91,4 +99,10 @@ def me(authorization: str = Header(None), db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return {"id": user.ID, "email": user.메일, "name": user.이름, "role": user.부서}
+    return {"id": user.ID, 
+            "email": user.메일, 
+            "name": user.이름, 
+            "role": user.부서
+              # ⬇️ 수정: 기존 user.부서 → user.권한 or user.직급
+            # "role": user.직급
+            }
