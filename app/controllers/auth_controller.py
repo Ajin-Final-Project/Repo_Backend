@@ -71,7 +71,7 @@ def login(body: dict, db: Session = Depends(get_db)):
         "user": {"id": user.ID,
                  "email": user.메일,
                  "name": user.이름,
-                 "role": user.부서
+                 "role": user.권한
                 #   ⬇️ 수정: 기존 user.부서 → user.권한 or user.직급
                 # "role": user.직급
                  }
@@ -102,7 +102,7 @@ def me(authorization: str = Header(None), db: Session = Depends(get_db)):
     return {"id": user.ID, 
             "email": user.메일, 
             "name": user.이름, 
-            "role": user.부서
+            "role": user.권한
               # ⬇️ 수정: 기존 user.부서 → user.권한 or user.직급
             # "role": user.직급
             }
