@@ -13,6 +13,7 @@ def get_downtime_list(request: DowntimeGridResquest):
     try:
         print(request)
         data = service.get_downtime_list(request)
+
         # print('data============', data)
         return {
             "message": "비가동시간 및 현황 테이블 조회 성공",

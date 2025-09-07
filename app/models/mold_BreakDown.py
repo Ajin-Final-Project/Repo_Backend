@@ -20,6 +20,12 @@ class MoldBreakdownRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
 
+    plant: Optional[str] = None
+    worker: Optional[str] = None
+    line : Optional[str] = None
+    itemCd: Optional[str] = None
+    ym : Optional[str] = None
+    mold_code: Optional[str] = None
 
     @validator('equipment', 'order_no', 'notification_no', pre=True)
     def zero_or_empty_to_none(cls, v):
