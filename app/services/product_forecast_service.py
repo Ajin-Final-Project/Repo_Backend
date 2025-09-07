@@ -33,7 +33,7 @@ class ProductForecastService:
                 FROM AJIN_newDB.daily_production
                 WHERE {' AND '.join(where_conditions)}
                 ORDER BY date DESC
-                LIMIT 7;
+                LIMIT 40;
             """
 
             rows = db.execute(text(sql), params).mappings().all()
