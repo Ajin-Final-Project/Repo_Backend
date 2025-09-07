@@ -32,7 +32,7 @@ class BottleneckOverviewService:
 
             sql = f"""
                 SELECT   
-                    Time_Now, Bottleneck_actual, Bottleneck_pred,
+                    Time_Now, Bottleneck_actual, Bottleneck_pred, c_TotalProducts,
                     Blanking_SKU1_Queue, Blanking_SKU2_Queue, Blanking_SKU3_Queue, Blanking_SKU4_Queue,
                     Press1_Queue, Press2_Queue, Press3_Queue, Press4_Queue,
                     Cell1_Queue, Cell2_Queue, Cell3_Queue, Cell4_Queue,
@@ -41,7 +41,11 @@ class BottleneckOverviewService:
                     Bottleneck_actual_SKU1, Bottleneck_actual_SKU2, Bottleneck_actual_SKU3, Bottleneck_actual_SKU4,
                     Bottleneck_pred_SKU1, Bottleneck_pred_SKU2, Bottleneck_pred_SKU3, Bottleneck_pred_SKU4,
                     Bottleneck_actual_Blanking, Bottleneck_actual_Press, Bottleneck_actual_Cell,
-                    Bottleneck_pred_Blanking, Bottleneck_pred_Press, Bottleneck_pred_Cell
+                    Bottleneck_pred_Blanking, Bottleneck_pred_Press, Bottleneck_pred_Cell,
+                    c_Cell1_SKU1, c_Cell1_SKU2, c_Cell1_SKU3, c_Cell1_SKU4,
+                    c_Cell2_SKU1, c_Cell2_SKU2, c_Cell2_SKU3, c_Cell2_SKU4,
+                    c_Cell3_SKU1, c_Cell3_SKU2, c_Cell3_SKU3, c_Cell3_SKU4,
+                    c_Cell4_SKU1, c_Cell4_SKU2, c_Cell4_SKU3, c_Cell4_SKU4
                 FROM AJIN_newDB.bottleneck_overview
                 WHERE {' AND '.join(where_conditions)}
                 ORDER BY Time_Now DESC
