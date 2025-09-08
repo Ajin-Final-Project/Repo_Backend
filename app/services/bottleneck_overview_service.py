@@ -48,8 +48,7 @@ class BottleneckOverviewService:
                     c_Cell4_SKU1, c_Cell4_SKU2, c_Cell4_SKU3, c_Cell4_SKU4
                 FROM AJIN_newDB.bottleneck_overview
                 WHERE {' AND '.join(where_conditions)}
-                ORDER BY Time_Now DESC
-                LIMIT 40
+                ORDER BY Time_Now DESC;
             """
 
             rows = db.execute(text(sql), params).mappings().all()
