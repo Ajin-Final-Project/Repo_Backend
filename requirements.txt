@@ -1,14 +1,26 @@
-# FastAPI 웹 프레임워크 - 현대적이고 빠른 Python 웹 API 구축용
-fastapi
+# FastAPI web framework - modern and fast Python web API framework
+fastapi==0.111.0
 
-# ASGI 서버 - FastAPI 애플리케이션을 실행하는 고성능 서버
-uvicorn
+# ASGI server - high-performance server for running FastAPI applications
+uvicorn[standard]==0.30.1
 
-# SQL 툴킷 및 ORM - Python에서 데이터베이스 작업을 위한 라이브러리
-sqlalchemy
+# SQL toolkit and ORM - library for database operations in Python
+sqlalchemy==2.0.30
 
-# MySQL/MariaDB 데이터베이스 연결 드라이버 - Python용 MySQL 클라이언트
-pymysql 
+# MySQL/MariaDB database connection driver - MySQL client for Python
+pymysql==1.1.0
 
-# JWT(JSON Web Token) 발급 및 검증 라이브러리 - 사용자 인증 및 보안 토큰 관리
-PyJWT==2.9.0 # pip install pyjwt
+# JWT (JSON Web Token) issuance and verification library - user authentication and security token management
+PyJWT==2.9.0
+
+# Pydantic - data validation and settings management
+pydantic==2.7.1
+
+# Environment variable management
+python-dotenv==1.0.1
+
+# RAG related packages
+chromadb==0.5.3
+openai>=1.40.0
+sentence-transformers
+torch

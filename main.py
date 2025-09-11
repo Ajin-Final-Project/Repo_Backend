@@ -191,6 +191,9 @@ from app.controllers.modal_controller import router as modal_router
 from app.controllers.product_forecast_controller import router as product_forecast_router
 from app.controllers.bottleneck_overview_controller import router as bottleneck_overview_router
 
+# RAG 챗봇 라우터
+from app.controllers.chat_controller import router as chat_router
+
 # ============================================================================
 
 app = FastAPI(
@@ -204,8 +207,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],  # ← 필요 시 전체 허용
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"]
 )
 
 # ============================================================================
@@ -252,6 +255,9 @@ app.include_router(bottleneck_overview_router, prefix="/smartFactory")
 # 인증
 app.include_router(auth_router)
 
+# RAG 챗봇
+app.include_router(chat_router, prefix="/smartFactory")
+
 # ============================================================================
 
 @app.get("/")
@@ -265,6 +271,8 @@ async def root():
             "auth_me": "GET /auth/me",
             "company": "GET /smartFactory/ ...",
             "process_line": "GET /smartFactory/ ...",
+            "rag_chat": "POST /chat/chat",
+            "rag_health": "GET /chat/health"
         },
     }
 
@@ -288,7 +296,39 @@ def analytics_stub():
 def analytics_stub_compat():
     return analytics_stub()
 
+def initialize_rag_system():
+    """RAG 시스템 초기화 - ChromaDB 컬렉션이 없으면 생성"""
+    try:
+        import chromadb
+        from app.config.settings import CHROMA_PATH
+        
+        # ChromaDB 클라이언트 초기화
+        chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+        
+        # ajin_unified 컬렉션이 존재하는지 확인
+        try:
+            collection = chroma_client.get_collection("ajin_unified")
+            print("✅ RAG 컬렉션이 이미 존재합니다.")
+            return True
+        except:
+            print("⚠️  RAG 컬렉션이 없습니다. 데이터 인덱싱을 시작합니다...")
+            
+            # 데이터 인덱싱 실행
+            from app.services.rag_service import index_unified_docs
+            index_unified_docs()
+            print("✅ RAG 데이터 인덱싱이 완료되었습니다.")
+            return True
+            
+    except Exception as e:
+        print(f"⚠️  RAG 시스템 초기화 중 오류: {e}")
+        print("테스트 모드로 실행됩니다.")
+        return False
+
 if __name__ == "__main__":
+    # RAG 시스템 초기화 => chromadb에 데이터 없을떄만 새로만듬
+    initialize_rag_system()
+    
+    # FastAPI 서버 실행
     import uvicorn
     uvicorn.run(
         "main:app",
