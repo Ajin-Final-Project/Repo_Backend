@@ -266,5 +266,70 @@ class Downtime_chart_service:
         finally:
             db.close()
 
+    def get_facility_item_downtime_agg(self, req: DowntimeGridResquest):
+        db: Session = next(get_db())
+        try:
+            sql = text("""
+                SELECT
+                    base.downtime_name,
+                    COUNT(*)                                   AS cnt,
+                    SUM(base.minutes)                           AS total_minutes,
+                    ROUND(AVG(NULLIF(base.minutes, 0)))         AS expected_minutes
+                FROM (
+                    SELECT
+                        /* ↓ 여기 컬럼명을 '비가동명' 또는 실제 있는 컬럼명(예: '비가동')으로 하나만 쓰세요 */
+                        a.`비가동명`                                   AS downtime_name,
+                        CAST(COALESCE(a.`비가동(분)`, 0) AS DECIMAL(10,2)) AS minutes
+                    FROM `AJIN_newDB`.`비가동시간 및 현황` AS a
+                    JOIN `AJIN_newDB`.`금형고장내역` AS b
+                    ON DATE(a.`근무일자`) = DATE(b.`기본시작일`)
+                    AND a.`자재번호` COLLATE utf8mb4_general_ci
+                        = SUBSTRING_INDEX(SUBSTRING_INDEX(b.`설비내역`, ' ', 2), ' ', -1) COLLATE utf8mb4_general_ci
+                    WHERE (:workplace IS NULL OR :workplace = '' OR a.`작업장` = :workplace)
+                    AND (:itemCode  IS NULL OR :itemCode  = '' OR a.`자재번호` = :itemCode)
+                    AND (:start_work_date IS NULL OR a.`근무일자` >= :start_work_date)
+                    AND (:end_work_date   IS NULL OR a.`근무일자` <= :end_work_date)
+                ) AS base
+                GROUP BY base.downtime_name
+                ORDER BY cnt DESC, downtime_name ASC;
+            """)
+
+            rows = [dict(r) for r in db.execute(sql, req.dict()).mappings().all()]
+            return rows
+        finally:
+            db.close()
+
+    def get_facility_line_downtime_agg(self, req: DowntimeGridResquest):
+        db: Session = next(get_db())
+        try:
+            sql = text("""
+                SELECT
+                    base.downtime_name,
+                    COUNT(*)                                   AS cnt,
+                    SUM(base.minutes)                           AS total_minutes,
+                    ROUND(AVG(NULLIF(base.minutes, 0)))         AS expected_minutes
+                FROM (
+                    SELECT
+                        /* ↓ 여기 컬럼명을 '비가동명' 또는 실제 있는 컬럼명(예: '비가동')으로 하나만 쓰세요 */
+                        a.`비가동명`                                   AS downtime_name,
+                        CAST(COALESCE(a.`비가동(분)`, 0) AS DECIMAL(10,2)) AS minutes
+                    FROM `AJIN_newDB`.`비가동시간 및 현황` AS a
+                    JOIN `AJIN_newDB`.`금형고장내역` AS b
+                    ON DATE(a.`근무일자`) = DATE(b.`기본시작일`)
+                    AND a.`자재번호` COLLATE utf8mb4_general_ci
+                        = SUBSTRING_INDEX(SUBSTRING_INDEX(b.`설비내역`, ' ', 2), ' ', -1) COLLATE utf8mb4_general_ci
+                    WHERE (:workplace IS NULL OR :workplace = '' OR a.`작업장` = :workplace)
+                    AND (:start_work_date IS NULL OR a.`근무일자` >= :start_work_date)
+                    AND (:end_work_date   IS NULL OR a.`근무일자` <= :end_work_date)
+                ) AS base
+                GROUP BY base.downtime_name
+                ORDER BY cnt DESC, downtime_name ASC;
+            """)
+
+            rows = [dict(r) for r in db.execute(sql, req.dict()).mappings().all()]
+            return rows
+        finally:
+            db.close()
+
 
 downtime_chart_service = Downtime_chart_service()
