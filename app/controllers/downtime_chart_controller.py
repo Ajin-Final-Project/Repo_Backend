@@ -78,3 +78,13 @@ def get_facility_line_downtime_agg(request: DowntimeGridResquest):
         return {"message": "facility-line-downtime-agg 조회 성공", "data": data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"facility-line-downtime-agg 조회 실패: {e}")
+    
+@router.post("/cause-detail")
+def cause_detail(req: DowntimeGridResquest, cause: str = Query(..., alias="cause_name"), top: int = 8):
+    try:
+        data = downtime_chart_service.get_downtime_detail_by_cause(req, cause_name=cause, top_actions=top)
+        # print("================= data : ", data)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"fdowntime_detail_by_cause 조회 실패: {e}")
+    
