@@ -31,7 +31,7 @@ class Modal_service:
                 outer_where_sql += " AND (t.자재번호 LIKE :item OR t.자재명 LIKE :item)"
 
             sql_str = f"""
-                SELECT t.자재번호, t.자재명, t.실적번호
+                SELECT DISTINCT(t.자재번호), t.자재명, t.실적번호
                 FROM AJIN_newDB.생산내역 AS t
                 JOIN (
                     SELECT
