@@ -176,3 +176,14 @@ def get_partnames_options(request: inspectionGridRequest):
     except Exception as e:
         print(f"품명 옵션 조회 오류: {str(e)}")
         return {"message": "품명 옵션 조회 실패", "error": str(e), "data": []}
+
+
+@router.post("/options/latest_date")
+def get_latest_date(request: inspectionGridRequest):
+    """ 생산_검사에서 최신 work_date(YYYY-MM-DD)를 반환 """
+    try:
+        d = service.get_latest_work_date(request)
+        return {"message": "최신 work_date 조회 성공", "data": d}
+    except Exception as e:
+        print(f"최신 work_date 조회 오류: {str(e)}")
+        return {"message": "최신 work_date 조회 실패", "error": str(e), "data": None}

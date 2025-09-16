@@ -5,6 +5,7 @@ from app.config.database import get_db
 from app.models.inspectionGrid import inspectionGridRequest
 from decimal import Decimal
 from typing import Dict, List, Any
+from datetime import date
 
 # 문자열 비교 collation (환경에 맞게 하나로 고정)
 COLL = "utf8mb4_general_ci"  # 또는 "utf8mb4_0900_ai_ci"
@@ -246,6 +247,53 @@ class Inspection_grid_service:
     def get_distinct_part_names(self, req: inspectionGridRequest) -> List[str]:
         # 품명 컬럼 없음 → 자재명 사용
         return self._distinct_from_insp("i.`자재명`", req)
+    
+    def get_latest_work_date(self, req: inspectionGridRequest):
+        """
+        생산_검사에서 최신 work_date를 YYYY-MM-DD 문자열로 반환.
+        (전역 최신일자 용도로 WHERE 없이도 동작. 필요시 plant/process/equipment 필터 적용 가능)
+        """
+        db: Session = next(get_db())
+        try:
+            hv = self._has_value
+            where = []
+            params = {}
+
+            # 필요하면 요청 필터 반영
+            plant_req   = getattr(req, "plant", None) or getattr(req, "factory", None)
+            process_req = getattr(req, "process", None)
+            equip_req   = getattr(req, "equipment", None)
+
+            c_plant       = "i.`plant`"
+            c_process     = "i.`process`"
+            c_equipment   = "i.`equipment`"
+            c_report_date = "i.`work_date`"
+
+            if hv(plant_req):
+                plant_vals = expand_vals("plant", plant_req)
+                where.append(_in_clause(c_plant, plant_vals, params, "plant_vals"))
+            if hv(process_req):
+                params["process"] = process_req
+                where.append(f"{_col(c_process)} = :process")
+            if hv(equip_req):
+                equip_vals = expand_vals("equipment", equip_req)
+                where.append(_in_clause(c_equipment, equip_vals, params, "equip_vals"))
+
+            where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+
+            sql = f"""
+                SELECT DATE(MAX({c_report_date})) AS last_day
+                FROM {T_INSP} i
+                {where_sql}
+            """
+            row = db.execute(text(sql), params).fetchone()
+            last_day = row[0] if row else None
+            if isinstance(last_day, (date, )):
+                return last_day.strftime("%Y-%m-%d")
+            return str(last_day) if last_day else None
+        finally:
+            db.close()
+
 
 
 inspection_grid_service = Inspection_grid_service()
