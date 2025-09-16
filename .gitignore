@@ -22,7 +22,7 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
-!.env.example
+.env.example
 
 # Editor / IDE
 .vscode/
@@ -44,6 +44,10 @@ Desktop.ini
 # Test/Etc (필요시)
 .jest/
 .storybook-out/
+
+app/chroma_db/
+*.sqlite3
+*.bin
 
 # Lock files — 패키지 매니저 하나만 고정해서 사용하세요.
 # npm을 쓸 거면 package-lock.json은 커밋하고, 나머지 잠금파일은 무시:

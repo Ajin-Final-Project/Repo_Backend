@@ -59,18 +59,32 @@ def get_top_notes(request: DowntimeGridResquest, limit:int=10):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"top-notes 조회 실패: {e}")
 
-@router.post("/actions")
-def get_actions(request: DowntimeGridResquest, limit:int=8):
+# 설비 제품별 비가동 집계
+@router.post("/facility-item-downtime-agg")
+def get_facility_item_downtime_agg(request: DowntimeGridResquest):
     try:
-        data = downtime_chart_service.get_actions(request, limit=limit)
-        return {"message": "actions 조회 성공", "data": data}
+        data = downtime_chart_service.get_facility_item_downtime_agg(request)
+        # print('data', data)
+        return {"message": "facility-item-downtime-agg 조회 성공", "data": data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"actions 조회 실패: {e}")
-
-@router.post("/causes")
-def get_causes(request: DowntimeGridResquest, limit:int=8):
+        raise HTTPException(status_code=500, detail=f"facility-item-downtime-agg 조회 실패: {e}")
+    
+# 설비 라인별 비가동 집계
+@router.post("/facility-line-downtime-agg")
+def get_facility_line_downtime_agg(request: DowntimeGridResquest):
     try:
-        data = downtime_chart_service.get_causes(request, limit=limit)
-        return {"message": "causes 조회 성공", "data": data}
+        data = downtime_chart_service.get_facility_line_downtime_agg(request)
+        # print('data', data)
+        return {"message": "facility-line-downtime-agg 조회 성공", "data": data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"causes 조회 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"facility-line-downtime-agg 조회 실패: {e}")
+    
+@router.post("/cause-detail")
+def cause_detail(req: DowntimeGridResquest, cause: str = Query(..., alias="cause_name"), top: int = 8):
+    try:
+        data = downtime_chart_service.get_downtime_detail_by_cause(req, cause_name=cause, top_actions=top)
+        # print("================= data : ", data)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"fdowntime_detail_by_cause 조회 실패: {e}")
+    

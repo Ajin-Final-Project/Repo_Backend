@@ -32,8 +32,7 @@ class ProductForecastService:
                     id, date, sku, pred, actual, error, abs_error, pct_error, hourly_avg
                 FROM AJIN_newDB.daily_production
                 WHERE {' AND '.join(where_conditions)}
-                ORDER BY date DESC
-                LIMIT 40;
+                ORDER BY date DESC;
             """
 
             rows = db.execute(text(sql), params).mappings().all()
