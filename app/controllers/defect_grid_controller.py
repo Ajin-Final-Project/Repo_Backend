@@ -10,13 +10,13 @@ def get_defect_list(request: DefectGridRequest):
         print("[DefectGrid] request:", request)
         data = defect_grid_service.get_defect_list(request)
         return {
-            "message": "불량공정(불량수량 및 유형) 조회 성공",
+            "message": "불량공정(생산_불량) 조회 성공",
             "count": len(data),
             "data": data
         }
     except Exception as e:
         print(f"[DefectGrid] 조회 오류: {str(e)}")
         return {
-            "message": "불량공정(불량수량 및 유형) 조회 실패",
+            "message": "불량공정(생산_불량) 조회 실패",
             "error": str(e)
         }

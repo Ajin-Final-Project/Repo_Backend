@@ -1,5 +1,7 @@
+# app/services/defect_chart_service.py
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from typing import Optional, List, Dict, Any
 from app.config.database import get_db
 
 class DefectChartService:
@@ -30,7 +32,7 @@ class DefectChartService:
             where_conditions.append("`근무일자` <= :end_date")
             params["end_date"] = req.end_date
 
-        # 필터
+        # 필터 (불량 테이블 스키마 기준)
         if has_value(getattr(req, "workplace", None)):
             where_conditions.append("`작업장` = :workplace")
             params["workplace"] = req.workplace
@@ -45,15 +47,57 @@ class DefectChartService:
             params["defectCode"] = req.defectCode
         if has_value(getattr(req, "defectType", None)):
             where_conditions.append("`불량유형` LIKE :defectType")
-            params["defectType"] = f"%{req.defectType.strip()}%"
+            params["defectType"] = f"%{str(req.defectType).strip()}%"
         if has_value(getattr(req, "worker", None)):
             where_conditions.append("`작업자` = :worker")
             params["worker"] = req.worker
+
+        # ▼ 추가: 품번/품명
+        if has_value(getattr(req, "itemCode", None)):
+            where_conditions.append("`자재번호` = :itemCode")
+            params["itemCode"] = req.itemCode
+        if has_value(getattr(req, "itemName", None)):
+            where_conditions.append("`자재명` LIKE :itemName")
+            params["itemName"] = f"%{str(req.itemName).strip()}%"
 
         if not where_conditions:
             where_conditions.append("1=1")
 
         return " AND ".join(where_conditions), params
+
+    # ─────────────────────────────────────────────
+    # 자재번호/자재명 목록 (모달용)
+    # ─────────────────────────────────────────────
+    def get_item_codes(self, workplace: Optional[str], start_date: Optional[str], end_date: Optional[str], defectType: Optional[str] = None) -> List[Dict[str, Any]]:
+        db: Session = next(get_db())
+        try:
+            where = ["1=1"]
+            params: Dict[str, Any] = {}
+            if workplace:
+                where.append("`작업장` = :workplace")
+                params["workplace"] = workplace
+            if start_date:
+                where.append("`근무일자` >= :start_date")
+                params["start_date"] = start_date
+            if end_date:
+                where.append("`근무일자` <= :end_date")
+                params["end_date"] = end_date
+            if defectType:
+                where.append("`불량유형` LIKE :defectType")
+                params["defectType"] = f"%{str(defectType).strip()}%"
+
+            sql = f"""
+                SELECT DISTINCT
+                    TRIM(`자재번호`) AS itemCode,
+                    TRIM(`자재명`)   AS itemName
+                FROM {self.TABLE}
+                WHERE {' AND '.join(where)}
+                ORDER BY itemCode
+            """
+            rows = db.execute(text(sql), params).mappings().all()
+            return [dict(r) for r in rows]
+        finally:
+            db.close()
 
     # ─────────────────────────────────────────────
     # KPI 집계
@@ -64,10 +108,10 @@ class DefectChartService:
             where_sql, params = self._build_where(req)
             sql = f"""
                 SELECT
-                    COALESCE(SUM(`양품수량`), 0)                      AS good,
-                    COALESCE(SUM(`판정대기`), 0)                      AS wait_cnt,
-                    COALESCE(SUM(`RWK 수량`), 0)                      AS rwk_cnt,
-                    COALESCE(SUM(`폐기 수량`), 0)                     AS scrap_cnt
+                    COALESCE(SUM(`양품수량`), 0)  AS good,
+                    COALESCE(SUM(`판정대기`), 0)  AS wait_cnt,
+                    COALESCE(SUM(`RWK 수량`), 0)  AS rwk_cnt,
+                    COALESCE(SUM(`폐기 수량`), 0) AS scrap_cnt
                 FROM {self.TABLE}
                 WHERE {where_sql}
             """
@@ -80,8 +124,7 @@ class DefectChartService:
             defect = wait_cnt + rwk_cnt + scrap_cnt
             throughput = good + defect
 
-            def rate(n, d):
-                return round((n / d) * 100, 2) if d else 0.0
+            def rate(n, d): return round((n / d) * 100, 2) if d else 0.0
 
             return {
                 "good": good,
@@ -105,8 +148,6 @@ class DefectChartService:
         try:
             where_sql, params = self._build_where(req)
             top_n = getattr(req, "topN", 10) or 10
-
-            # 합계는 SUM 각각 더하는 방식이 안전
             sql = f"""
                 SELECT
                     `불량유형` AS type,
@@ -117,7 +158,7 @@ class DefectChartService:
                 ORDER BY qty DESC
                 LIMIT :top_n
             """
-            params2 = {**params, "top_n": top_n}
+            params2 = {**params, "top_n": int(top_n)}
             rows = db.execute(text(sql), params2).mappings().all()
             return [dict(r) for r in rows]
         finally:
