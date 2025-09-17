@@ -210,7 +210,7 @@ from app.controllers.process_line_controller import router as process_router
 from app.controllers.production_grid_controller import router as production_grid_router
 from app.controllers.defect_grid_controller import router as defect_grid_router
 from app.controllers.defect_chart_controller import router as defect_chart_router
-from app.controllers import downtime_grid_controller
+from app.controllers.downtime_grid_controller import router as downtime_grid_router
 from app.controllers.downtime_chart_controller import router as downtime_chart_router
 from app.controllers.user_grid_controller import router as user_grid_router
 from app.controllers.production_chart_controller import router as production_chart_router
@@ -265,7 +265,7 @@ app.include_router(defect_chart_router, prefix="/smartFactory")
 app.include_router(defect_grid_router, prefix="/smartFactory")
 
 # 비가동
-app.include_router(downtime_grid_controller.router, prefix="/smartFactory")
+app.include_router(downtime_grid_router, prefix="/smartFactory")
 app.include_router(downtime_chart_router, prefix="/smartFactory")
 
 # 사원 관리
